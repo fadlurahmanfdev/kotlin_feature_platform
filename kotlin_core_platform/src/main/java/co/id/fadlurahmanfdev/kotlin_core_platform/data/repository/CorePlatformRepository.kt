@@ -8,4 +8,7 @@ interface CorePlatformRepository {
      * return unique identifier of deviceID
      */
     fun getDeviceId(context: Context): String
+    fun isDevelopmentModeEnabled(context: Context): Boolean
+    fun isEmulatorDevice(context: Context): Boolean
+    fun isRootedDevice(context: Context): Boolean
 }
