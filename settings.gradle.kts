@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Kotlin Core Platform"
+rootProject.name = "Kotlin Feature Platform"
 include(":app")
-include(":kotlin_core_platform")
+include(":kotlin_feature_platform")
