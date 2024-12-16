@@ -46,5 +46,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation(project(":kotlin_feature_platform"))
+    implementation(project(":feature_platform"))
 }
