@@ -52,13 +52,38 @@ class FeatureBluetooth(private val context: Context) : FeatureBluetoothRepositor
 
     private var _macAddressConnected: String? = null
 
+    /**
+     * Connect with device using mac address.
+     * if mac address in the parameter different with currently connected mac adress,
+     * it will disconnect the old connection then connect to the new mac address
+     *
+     * @param macAddress mac address get from [FeatureBluetooth.getPairedBluetoothDevices]
+     * */
     override fun connect(macAddress: String): Boolean {
+        if (macAddress == _macAddressConnected && _bluetoothSocket?.isConnected == true) {
+            _isConnected = true
+            Log.i(
+                this::class.java.simpleName,
+                "bluetooth socket already connected with the same mac address"
+            )
+        }
+
+        if (_isConnected) {
+            return true
+        }
+
+        if (_macAddressConnected != null && _bluetoothSocket != null && macAddress != _macAddressConnected && _bluetoothSocket?.isConnected == true) {
+            Log.i(
+                this::class.java.simpleName,
+                "bluetooth socket connected with different mac address, trying to disconnect"
+            )
+            disconnect()
+        }
+
         _isConnected = false
         val device = bluetoothAdapter.getRemoteDevice(macAddress)
         _bluetoothSocket =
             device.createRfcommSocketToServiceRecord(device.uuids.firstOrNull()?.uuid ?: SPP_UUID)
-
-        Log.d(this::class.java.simpleName, "is connected: ${_bluetoothSocket!!.isConnected}")
         try {
             bluetoothAdapter.cancelDiscovery()
         } catch (e: Throwable) {
@@ -77,11 +102,25 @@ class FeatureBluetooth(private val context: Context) : FeatureBluetoothRepositor
         return _isConnected
     }
 
+    /**
+     * Check whether there is connection to a bluetooth device
+     * */
+    override fun isConnected(): Boolean = _bluetoothSocket?.isConnected ?: false
+
+    /**
+     * Check mac address connected if currently is connected with device
+     * */
     override fun getMacAddressConnected(): String? = _macAddressConnected
 
+    /**
+     * Disconnect connection bluetooth to device, if there any connection
+     * */
     override fun disconnect() {
         if (_bluetoothSocket == null) {
-            Log.d(this::class.java.simpleName, "bluetooth socket missing")
+            Log.i(
+                this::class.java.simpleName,
+                "failed to disconnect, either already disconnected or socket is missing"
+            )
             _isConnected = false
             _macAddressConnected = null
             return
@@ -89,7 +128,7 @@ class FeatureBluetooth(private val context: Context) : FeatureBluetoothRepositor
 
         try {
             _bluetoothSocket!!.close()
-            Log.i(this::class.java.simpleName, "successfully disconnect")
+            Log.i(this::class.java.simpleName, "successfully disconnected")
         } catch (e: Throwable) {
             Log.e(this::class.java.simpleName, "failed to disconnect: ${e.message}")
         }
@@ -98,9 +137,20 @@ class FeatureBluetooth(private val context: Context) : FeatureBluetoothRepositor
         _macAddressConnected = null
     }
 
+    /**
+     * Check if the local Bluetooth adapter is currently in the device discovery process
+     * */
     override fun isDiscovering(): Boolean = bluetoothManager.adapter.isDiscovering
 
+    /**
+     * Cancel discovery process
+     * */
     override fun cancelDiscovery() {
+        if (!isDiscovering()) {
+            Log.i(this::class.java.simpleName, "bluetooth is no in discovery process")
+            return
+        }
+
         bluetoothManager.adapter.cancelDiscovery()
     }
 }
