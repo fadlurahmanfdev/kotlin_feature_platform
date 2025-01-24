@@ -19,12 +19,5 @@ interface FeaturePlatformRepository {
      * @param withBusyBox determine to check busy box in rooted/jailbreak device
      * @return true - if device is rooted & busy box detected (if withBusyBox is checked)
      * */
-    fun isRootedApps(withBusyBox:Boolean = false): Boolean
-
-    /**
-     * Check bluetooth service enabled
-     * */
-    fun isBluetoothEnabled(): Boolean
-
-    fun getPairedBluetoothDevices():List<BluetoothDevice>
+    fun isRootedApps(withBusyBox: Boolean = false): Boolean
 }

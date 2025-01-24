@@ -10,11 +10,8 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,12 +20,15 @@ import com.fadlurahmanfdev.example.R
 import com.fadlurahmanfdev.example.data.FeatureModel
 import com.fadlurahmanfdev.example.domain.ExampleCorePlatformUseCaseImpl
 import com.fadlurahmanfdev.example.service.DiscoverBluetoothReceiver
+import com.fadlurahmanfdev.feature_platform.repository.FeatureBluetoothRepository
+import com.fadlurahmanfdev.feature_platform.FeatureBluetooth
+import com.fadlurahmanfdev.feature_platform.FeaturePlatform
 import com.fadlurahmanfdev.feature_platform.repository.FeaturePlatformRepository
-import com.fadlurahmanfdev.feature_platform.repository.FeaturePlatformRepositoryImpl
 
 class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
     lateinit var viewModel: MainViewModel
-    lateinit var featurePlatformRepository: FeaturePlatformRepository
+    lateinit var featurePlatform: FeaturePlatformRepository
+    lateinit var featureBluetooth: FeatureBluetoothRepository
 
     private val features: List<FeatureModel> = listOf<FeatureModel>(
         FeatureModel(
@@ -85,6 +85,18 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
             desc = "Discover Nearby Bluetooth Device",
             enum = "DISCOVER_NEARBY_BLUETOOTH_DEVICE"
         ),
+        FeatureModel(
+            featureIcon = R.drawable.baseline_developer_mode_24,
+            title = "Connect with device",
+            desc = "Connect with device",
+            enum = "CONNECT_WITH_DEVICE"
+        ),
+        FeatureModel(
+            featureIcon = R.drawable.baseline_developer_mode_24,
+            title = "Disconnect with device",
+            desc = "Disconnect with device",
+            enum = "DISCONNECT_WITH_DEVICE"
+        ),
     )
 
     private lateinit var rv: RecyclerView
@@ -106,7 +118,8 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
             exampleCorePlatformUseCase = ExampleCorePlatformUseCaseImpl()
         )
 
-        featurePlatformRepository = FeaturePlatformRepositoryImpl(applicationContext)
+        featurePlatform = FeaturePlatform(applicationContext)
+        featureBluetooth = FeatureBluetooth(applicationContext)
 
         rv.setItemViewCacheSize(features.size)
         rv.setHasFixedSize(true)
@@ -127,12 +140,12 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
     override fun onClicked(item: FeatureModel) {
         when (item.enum) {
             "GET_DEVICE_ID" -> {
-                val deviceId = featurePlatformRepository.getDeviceId()
+                val deviceId = featurePlatform.getDeviceId()
                 Log.d(this::class.java.simpleName, "device id: $deviceId")
             }
 
             "CHECK_ROOTED_DEVICE" -> {
-                val isRootedDevice = featurePlatformRepository.isRootedApps(withBusyBox = true)
+                val isRootedDevice = featurePlatform.isRootedApps(withBusyBox = true)
                 Log.d(
                     this::class.java.simpleName,
                     "is rooted device with busy box: $isRootedDevice"
@@ -144,7 +157,7 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     permissionResult = ContextCompat.checkSelfPermission(
                         applicationContext,
-                        android.Manifest.permission.BLUETOOTH_CONNECT
+                        android.Manifest.permission.BLUETOOTH_SCAN
                     )
                 } else {
                     TODO("VERSION.SDK_INT < S")
@@ -154,16 +167,16 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
             }
 
             "REQUEST_BLUETOOTH_PERMISSION" -> {
-                bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                bluetoothPermissionLauncher.launch(android.Manifest.permission.BLUETOOTH_SCAN)
             }
 
             "IS_BLUETOOTH_ENABLED" -> {
-                val isEnabled = featurePlatformRepository.isBluetoothEnabled()
+                val isEnabled = featureBluetooth.isBluetoothEnabled()
                 Log.d(this::class.java.simpleName, "is bluetooth service enabled: $isEnabled")
             }
 
             "REQUEST_ENABLED_BLUETOOTH_SERVICE" -> {
-                val isEnabled = featurePlatformRepository.isBluetoothEnabled()
+                val isEnabled = featureBluetooth.isBluetoothEnabled()
                 if (!isEnabled) {
                     val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                     bluetoothServiceLauncher.launch(enableBtIntent)
@@ -171,7 +184,7 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
             }
 
             "LIST_PAIRED_BLUETOOTH_DEVICE" -> {
-                val pairedBluetoothDevices = featurePlatformRepository.getPairedBluetoothDevices()
+                val pairedBluetoothDevices = featureBluetooth.getPairedBluetoothDevices()
                 pairedBluetoothDevices.forEach {
                     Log.d(
                         this::class.java.simpleName, "paired bluetooth: \n" +
@@ -184,15 +197,26 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
             }
 
             "DISCOVER_NEARBY_BLUETOOTH_DEVICE" -> {
-                val intentFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-                registerReceiver(discoverBluetoothReceiver, intentFilter)
-                isDiscoverBluetoothReceiverActive = true
+                if (!featureBluetooth.isDiscovering()) {
+                    val intentFilter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+                    registerReceiver(discoverBluetoothReceiver, intentFilter)
+                    isDiscoverBluetoothReceiverActive = true
+                }
+            }
+
+            "CONNECT_WITH_DEVICE" -> {
+                val isConnected = featureBluetooth.connect("DC:0D:51:F5:7E:AD")
+                Log.d(this::class.java.simpleName, "is successfully connected: $isConnected")
+            }
+
+            "DISCONNECT_WITH_DEVICE" -> {
+                featureBluetooth.disconnect()
             }
         }
     }
 
     override fun onPause() {
-        if(isDiscoverBluetoothReceiverActive){
+        if (isDiscoverBluetoothReceiverActive) {
             unregisterReceiver(discoverBluetoothReceiver)
             isDiscoverBluetoothReceiverActive = false
         }
@@ -206,7 +230,7 @@ class MainActivity : AppCompatActivity(), ListExampleAdapter.Callback {
 
     private val bluetoothServiceLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            val isEnabled = featurePlatformRepository.isBluetoothEnabled()
+            val isEnabled = featureBluetooth.isBluetoothEnabled()
             Log.d(this::class.java.simpleName, "bluetooth service launcher: $isEnabled")
         }
 
