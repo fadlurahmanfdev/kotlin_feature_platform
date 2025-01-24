@@ -71,7 +71,7 @@ mavenPublishing {
 
     pom {
         name.set("Feature Platform")
-        description.set("Library to simplified platform implementation")
+        description.set("Library simplified implementation, bluetooth implementation, safe device implementation, etc")
         inceptionYear.set("2024")
         url.set("https://github.com/fadlurahmanfdev/kotlin_feature_platform/")
         licenses {
