@@ -46,7 +46,7 @@ dependencies {
 //    androidTestImplementation(libs.androidx.junit)
 //    androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation("com.scottyab:rootbeer-lib:0.1.1")
+    api("com.scottyab:rootbeer-lib:0.1.1")
 }
 
 publishing {
@@ -67,7 +67,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
 
-    coordinates("com.fadlurahmanfdev", "feature_platform", "1.0.0")
+    coordinates("com.fadlurahmanfdev", "feature_platform", "1.1.0")
 
     pom {
         name.set("Feature Platform")
