@@ -1,6 +1,16 @@
 # Description
 
-Android library handle platform implementation such as (device id, bluetooth, etc)
+Android library handle platform implementation such as (device id, safe device, bluetooth, etc).
+
+### How to install
+
+For [latest version](https://github.com/fadlurahmanfdev/kotlin_feature_platform/releases), you can get by the latest tag/release here.
+
+```kotlin
+dependencies {
+    implementation("com.fadlurahmanfdev:feature_platform:x.y.z")
+}
+```
 
 ## Key Features
 
